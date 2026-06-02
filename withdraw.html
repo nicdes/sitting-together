@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitting Together · Withdraw</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Karla:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --paper: #f5f0e8;
+    --paper-dark: #ede7d9;
+    --ink: #2a2318;
+    --ink-light: #6b5f4e;
+    --ink-faint: #b0a898;
+    --warm: #c4873a;
+    --line: #d8cfbf;
+  }
+
+  body {
+    font-family: 'Karla', sans-serif;
+    font-weight: 300;
+    color: var(--ink);
+    background: var(--paper);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  .card {
+    max-width: 460px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .bell {
+    font-size: 28px;
+    margin-bottom: 20px;
+    display: block;
+    opacity: 0.6;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 2rem;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+
+  h1 em { font-style: italic; color: var(--warm); }
+
+  p {
+    font-size: 0.88rem;
+    color: var(--ink-light);
+    line-height: 1.8;
+    margin-bottom: 28px;
+  }
+
+  .btn {
+    padding: 13px 32px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Karla', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin: 4px;
+  }
+
+  .btn:hover { background: var(--warm); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-light);
+    border: 1px solid var(--line);
+  }
+
+  .btn-ghost:hover { background: var(--paper-dark); color: var(--ink); }
+
+  .state { display: none; }
+  .state.active { display: block; }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .icon-large { font-size: 2.4rem; margin-bottom: 16px; display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- CONFIRM STATE -->
+  <div class="state active" id="state-confirm">
+    <span class="bell">🔔</span>
+    <h1>Withdraw from<br><em>Sitting Together</em></h1>
+    <p>
+      This will remove you from the pool.<br>
+      If you've already been matched, your partner will be notified and returned to the pool.<br><br>
+      You can re-submit at any time.
+    </p>
+    <button class="btn" id="confirm-btn" onclick="doWithdraw()">Yes, withdraw me</button>
+    <br><br>
+    <a href="index.html"><button class="btn btn-ghost">Cancel</button></a>
+  </div>
+
+  <!-- LOADING STATE -->
+  <div class="state" id="state-loading">
+    <span class="bell">🔔</span>
+    <h1>One moment…</h1>
+    <p>Updating the pool.</p>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="state" id="state-success">
+    <span class="icon-large">🙏</span>
+    <h1>You're out</h1>
+    <p id="success-msg">You've been removed from the pool.</p>
+    <a href="index.html"><button class="btn btn-ghost">Re-submit</button></a>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="state" id="state-error">
+    <span class="icon-large">🤍</span>
+    <h1>Something went wrong</h1>
+    <p id="error-msg">This link may have already been used, or it has expired.</p>
+  </div>
+
+</div>
+
+<script>
+  // ─── CONFIG ──────────────────────────────────────────────────
+  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+  // ─────────────────────────────────────────────────────────────
+
+  // Read token from URL
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  if (!token) {
+    show('state-error');
+    document.getElementById('error-msg').textContent = 'No withdrawal token found. Please use the link from your match email.';
+  }
+
+  function show(id) {
+    document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  async function doWithdraw() {
+    if (!token) return;
+    show('state-loading');
+
+    try {
+      // Use GET with token param (simpler, avoids CORS preflight)
+      const url = APPS_SCRIPT_URL + '?token=' + encodeURIComponent(token);
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
+
+      // With no-cors we can't read the response, so assume success
+      show('state-success');
+      document.getElementById('success-msg').textContent =
+        'You have been removed from the pool. If you had a match, they have been notified.';
+
+    } catch (err) {
+      show('state-error');
+      document.getElementById('error-msg').textContent = 'Could not reach the server. Please try again.';
+    }
+  }
+</script>
+</body>
+</html>
