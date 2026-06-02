@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sitting Together · Join</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Karla:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --paper: #f5f0e8;
+    --paper-dark: #ede7d9;
+    --ink: #2a2318;
+    --ink-light: #6b5f4e;
+    --ink-faint: #b0a898;
+    --warm: #c4873a;
+    --warm-light: #e8c48a;
+    --line: #d8cfbf;
+    --shadow: rgba(42,35,24,0.08);
+  }
+
+  html { background: var(--paper); }
+
+  body {
+    font-family: 'Karla', sans-serif;
+    font-weight: 300;
+    color: var(--ink);
+    background: var(--paper);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  .page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 60px 32px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .bell {
+    font-size: 28px;
+    margin-bottom: 18px;
+    animation: breathe 4s ease-in-out infinite;
+    display: block;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.08); opacity: 1; }
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 2.4rem;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  h1 em { font-style: italic; color: var(--warm); }
+
+  .subtitle {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .intro {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 22px;
+    font-size: 0.88rem;
+    color: var(--ink-light);
+    line-height: 1.7;
+    margin-bottom: 36px;
+  }
+
+  .intro strong { color: var(--ink); font-weight: 400; }
+
+  .section {
+    margin-bottom: 28px;
+  }
+
+  label.field-label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 10px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    font-family: 'Karla', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus { border-color: var(--warm-light); }
+
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .date-col label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+    letter-spacing: 0.06em;
+  }
+
+  .select-wrap {
+    position: relative;
+  }
+
+  .select-wrap::after {
+    content: '↓';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    pointer-events: none;
+  }
+
+  /* People grid */
+  .people-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
+  .person-chip {
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    font-family: 'Karla', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: var(--ink-light);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    user-select: none;
+  }
+
+  .person-chip:hover { border-color: var(--warm-light); color: var(--ink); }
+  .person-chip.selected { background: var(--warm-light); border-color: var(--warm); color: var(--ink); }
+
+  .helper {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle {
+    width: 40px;
+    height: 22px;
+    background: var(--line);
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle.on { background: var(--warm); }
+  .toggle.on::after { transform: translateX(18px); }
+
+  .toggle-text .title { font-size: 0.9rem; color: var(--ink); }
+  .toggle-text .sub { font-size: 0.78rem; color: var(--ink-faint); margin-top: 2px; }
+
+  /* Button */
+  .btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Karla', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+
+  .btn:hover { background: var(--warm); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Error */
+  .error {
+    font-size: 0.8rem;
+    color: #c0392b;
+    margin-top: 6px;
+    display: none;
+  }
+
+  /* Success */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .success-screen .icon { font-size: 2.4rem; margin-bottom: 18px; display: block; }
+
+  .success-screen h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 2rem;
+    margin-bottom: 14px;
+  }
+
+  .success-screen p {
+    font-size: 0.88rem;
+    color: var(--ink-light);
+    line-height: 1.8;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .notice {
+    padding: 14px 16px;
+    background: var(--paper-dark);
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: var(--ink-light);
+    line-height: 1.6;
+    margin-top: 20px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <span class="bell">🔔</span>
+    <h1>Sitting <em>Together</em></h1>
+    <p class="subtitle">Peer meditation · Berlin</p>
+  </header>
+
+  <div class="intro">
+    <strong>How it works:</strong> Fill in your name, email, who you'd feel good sitting with, when you're free, and how long you'd like to sit. Once enough mutual matches exist, you'll get a quiet email introducing your group — and then you take it from there.
+    <br><br>
+    Nobody sees your preferences. You'll only hear from the system if you're matched.
+  </div>
+
+  <!-- FORM -->
+  <div id="form-view">
+
+    <div class="section">
+      <label class="field-label">Your name</label>
+      <input type="text" id="name" placeholder="How the group knows you…" />
+      <div class="error" id="err-name">Please enter your name</div>
+    </div>
+
+    <div class="section">
+      <label class="field-label">Your email</label>
+      <input type="email" id="email" placeholder="For the match notification only" />
+      <div class="error" id="err-email">Please enter a valid email</div>
+    </div>
+
+    <div class="section">
+      <label class="field-label">Who would you feel good sitting with?</label>
+      <p class="helper">Select one or more people. Only mutual selections are matched — nobody will know if you didn't pick them.</p>
+      <div class="people-grid" id="people-grid"></div>
+      <div class="error" id="err-people">Please select at least one person</div>
+    </div>
+
+    <div class="section">
+      <label class="field-label">When are you available?</label>
+      <p class="helper">Pick a window of dates you could potentially sit. Overlapping availability is required for a match.</p>
+      <div class="date-row">
+        <div class="date-col">
+          <label>From</label>
+          <input type="date" id="date-from" />
+        </div>
+        <div class="date-col">
+          <label>To</label>
+          <input type="date" id="date-to" />
+        </div>
+      </div>
+      <div class="error" id="err-dates">Please select a valid date range</div>
+    </div>
+
+    <div class="section">
+      <label class="field-label">Minimum session length you'd go for</label>
+      <p class="helper">Groups are matched so everyone's minimum is met.</p>
+      <div class="select-wrap">
+        <select id="session-length">
+          <option value="">Select…</option>
+          <option value="1">1 hour</option>
+          <option value="1.5">1.5 hours</option>
+          <option value="2">2 hours</option>
+          <option value="3">3 hours</option>
+          <option value="4">Half day (4 hours)</option>
+          <option value="8">Full day (8 hours)</option>
+        </select>
+      </div>
+      <div class="error" id="err-length">Please select a session length</div>
+    </div>
+
+    <div class="section">
+      <label class="field-label">Hosting</label>
+      <div class="toggle-row" onclick="toggleHost()">
+        <div class="toggle" id="host-toggle"></div>
+        <div class="toggle-text">
+          <div class="title">I can host at my place</div>
+          <div class="sub">Quiet space, floor or chairs, access to toilet and tea</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="submit-btn" onclick="submitForm()">Add myself to the pool</button>
+
+    <div class="notice">
+      🌿 No teacher, no hierarchy. Just people who trust each other, sitting together.
+    </div>
+
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-screen" id="success-view">
+    <span class="icon">🙏</span>
+    <h2>You're in the pool</h2>
+    <p>
+      If a mutual match is found, you'll get a quiet email with your group's contact details.<br><br>
+      Until then — breathe.
+    </p>
+  </div>
+
+</div>
+
+<script>
+  // ─── CONFIG ───────────────────────────────────────────────
+  // Paste your Google Apps Script Web App URL here after deployment:
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzUDn4be2YLe3ijao3otfkWmCb5Oa5g-Rx2rRPn8nNRwyapAQa3WX9hAs5gZDhys-nj/exec';
+
+  // Edit this list to match your group:
+  const GROUP_MEMBERS = ['Nico D.', 'Annie Chu', 'Art', 'BB', 'Chris Zala', 'Innokenty', 'Ira', 'Ivan', 'Karina', 'Lamma', 'Lena', 'M', 'Mathias', 'Nico', 'nil', 'Nora', 'Pooya', 'Tina Schultz', 'Varya', 'Erzsi'];
+  // ──────────────────────────────────────────────────────────
+
+  let selectedPeople = new Set();
+  let canHost = false;
+
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date-from').min = today;
+  document.getElementById('date-to').min = today;
+
+  // Render people grid
+  const grid = document.getElementById('people-grid');
+  GROUP_MEMBERS.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'person-chip';
+    chip.textContent = name;
+    chip.onclick = () => {
+      if (selectedPeople.has(name)) {
+        selectedPeople.delete(name);
+        chip.classList.remove('selected');
+      } else {
+        selectedPeople.add(name);
+        chip.classList.add('selected');
+      }
+    };
+    grid.appendChild(chip);
+  });
+
+  // Update date-to min when date-from changes
+  document.getElementById('date-from').addEventListener('change', function() {
+    document.getElementById('date-to').min = this.value;
+  });
+
+  function toggleHost() {
+    canHost = !canHost;
+    document.getElementById('host-toggle').classList.toggle('on', canHost);
+  }
+
+  function showError(id, show) {
+    document.getElementById(id).style.display = show ? 'block' : 'none';
+  }
+
+  async function submitForm() {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const dateFrom = document.getElementById('date-from').value;
+    const dateTo = document.getElementById('date-to').value;
+    const sessionLength = document.getElementById('session-length').value;
+
+    // Validation
+    let valid = true;
+    showError('err-name', !name); if (!name) valid = false;
+    showError('err-email', !email || !email.includes('@')); if (!email || !email.includes('@')) valid = false;
+    showError('err-people', selectedPeople.size === 0); if (selectedPeople.size === 0) valid = false;
+    showError('err-dates', !dateFrom || !dateTo || dateTo < dateFrom); if (!dateFrom || !dateTo || dateTo < dateFrom) valid = false;
+    showError('err-length', !sessionLength); if (!sessionLength) valid = false;
+    if (!valid) return;
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Sending…';
+
+    const payload = {
+      name,
+      email,
+      willing: [...selectedPeople].join(','),
+      dateFrom,
+      dateTo,
+      sessionLength: parseFloat(sessionLength),
+      canHost
+    };
+
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Add myself to the pool';
+      alert('Something went wrong. Please try again.');
+    }
+  }
+</script>
+</body>
+</html>
