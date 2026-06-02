@@ -181,6 +181,7 @@
 
   .person-chip:hover { border-color: var(--warm-light); color: var(--ink); }
   .person-chip.selected { background: var(--warm-light); border-color: var(--warm); color: var(--ink); }
+  .person-chip.self-chip { background: var(--ink); border-color: var(--ink); color: var(--paper); font-style: italic; }
 
   .helper {
     font-size: 0.78rem;
@@ -322,18 +323,20 @@
   </header>
 
   <div class="intro">
-    <strong>How it works:</strong> Fill in your name, email, who you'd feel good sitting with, when you're free, and how long you'd like to sit. Once enough mutual matches exist, you'll get a quiet email introducing your group — and then you take it from there.
+    <strong>How it works:</strong> Select who you are, your email, who you'd feel good sitting with, when you're free, and how long you'd like to sit. Once enough mutual matches exist, you'll get a quiet email introducing your group — and then you take it from there.
     <br><br>
     Nobody sees your preferences. You'll only hear from the system if you're matched.
+    <br><br>
+    <em>Groups of two or three only. Simone Weil — French philosopher and mystic, one of the sharper minds of the 20th century — observed that genuine intimacy only exists at that scale. In a larger group collective language takes over and something is lost. And... it fits in about any apartment ;)</em>
   </div>
 
   <!-- FORM -->
   <div id="form-view">
 
-    <div class="section">
-      <label class="field-label">Your name</label>
-      <input type="text" id="name" placeholder="How the group knows you…" />
-      <div class="error" id="err-name">Please enter your name</div>
+    <!-- Honeypot: hidden from humans, bots will fill it -->
+    <div style="position:absolute;left:-9999px;top:-9999px;opacity:0;" aria-hidden="true">
+      <label for="website">Leave this empty</label>
+      <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
     </div>
 
     <div class="section">
@@ -343,10 +346,10 @@
     </div>
 
     <div class="section">
-      <label class="field-label">Who would you feel good sitting with?</label>
-      <p class="helper">Select one or more people. Only mutual selections are matched — nobody will know if you didn't pick them.</p>
+      <label class="field-label">Who are you, and who would you sit with?</label>
+      <p class="helper">First select your own name, then select who you'd feel good sitting with. Only mutual selections are matched — nobody will know if you didn't pick them.</p>
       <div class="people-grid" id="people-grid"></div>
-      <div class="error" id="err-people">Please select at least one person</div>
+      <div class="error" id="err-people">Please select your name and at least one other person</div>
     </div>
 
     <div class="section">
@@ -416,12 +419,13 @@
 <script>
   // ─── CONFIG ───────────────────────────────────────────────
   // Paste your Google Apps Script Web App URL here after deployment:
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzUDn4be2YLe3ijao3otfkWmCb5Oa5g-Rx2rRPn8nNRwyapAQa3WX9hAs5gZDhys-nj/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3jExm7fO8yKreq2LwZnPpK88wwIZCu4Pp1piViNP0tVPMivGbFAIWFqCJ1rL8JVX4/exec';
 
   // Edit this list to match your group:
-  const GROUP_MEMBERS = ['Nico D.', 'Annie Chu', 'Art', 'BB', 'Chris Zala', 'Innokenty', 'Ira', 'Ivan', 'Karina', 'Lamma', 'Lena', 'M', 'Mathias', 'Nico', 'nil', 'Nora', 'Pooya', 'Tina Schultz', 'Varya', 'Erzsi'];
+  const GROUP_MEMBERS = ['Nico D.', 'Someone'];
   // ──────────────────────────────────────────────────────────
 
+  let selfName = null;
   let selectedPeople = new Set();
   let canHost = false;
 
@@ -430,23 +434,37 @@
   document.getElementById('date-from').min = today;
   document.getElementById('date-to').min = today;
 
-  // Render people grid
+  // Render people grid — first click = self, subsequent = willing to sit with
   const grid = document.getElementById('people-grid');
-  GROUP_MEMBERS.forEach(name => {
-    const chip = document.createElement('div');
-    chip.className = 'person-chip';
-    chip.textContent = name;
-    chip.onclick = () => {
-      if (selectedPeople.has(name)) {
-        selectedPeople.delete(name);
-        chip.classList.remove('selected');
-      } else {
-        selectedPeople.add(name);
-        chip.classList.add('selected');
-      }
-    };
-    grid.appendChild(chip);
-  });
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    GROUP_MEMBERS.forEach(name => {
+      const chip = document.createElement('div');
+      const isSelf = name === selfName;
+      const isSelected = selectedPeople.has(name);
+      chip.className = 'person-chip' + (isSelf ? ' self-chip' : '') + (isSelected ? ' selected' : '');
+      chip.textContent = isSelf ? name + ' (you)' : name;
+      chip.onclick = () => {
+        if (name === selfName) {
+          // Deselect self
+          selfName = null;
+          selectedPeople.delete(name);
+        } else if (!selfName) {
+          // First selection = this is me
+          selfName = name;
+        } else {
+          // Toggle willing
+          if (selectedPeople.has(name)) selectedPeople.delete(name);
+          else selectedPeople.add(name);
+        }
+        renderGrid();
+      };
+      grid.appendChild(chip);
+    });
+  }
+
+  renderGrid();
 
   // Update date-to min when date-from changes
   document.getElementById('date-from').addEventListener('change', function() {
@@ -463,7 +481,9 @@
   }
 
   async function submitForm() {
-    const name = document.getElementById('name').value.trim();
+    // Honeypot check — bots fill this, humans don't
+    if (document.getElementById('website').value) return;
+
     const email = document.getElementById('email').value.trim();
     const dateFrom = document.getElementById('date-from').value;
     const dateTo = document.getElementById('date-to').value;
@@ -471,9 +491,9 @@
 
     // Validation
     let valid = true;
-    showError('err-name', !name); if (!name) valid = false;
     showError('err-email', !email || !email.includes('@')); if (!email || !email.includes('@')) valid = false;
-    showError('err-people', selectedPeople.size === 0); if (selectedPeople.size === 0) valid = false;
+    const noSelection = !selfName || selectedPeople.size === 0;
+    showError('err-people', noSelection); if (noSelection) valid = false;
     showError('err-dates', !dateFrom || !dateTo || dateTo < dateFrom); if (!dateFrom || !dateTo || dateTo < dateFrom) valid = false;
     showError('err-length', !sessionLength); if (!sessionLength) valid = false;
     if (!valid) return;
@@ -483,7 +503,7 @@
     btn.innerHTML = '<span class="spinner"></span>Sending…';
 
     const payload = {
-      name,
+      name: selfName,
       email,
       willing: [...selectedPeople].join(','),
       dateFrom,
